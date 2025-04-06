@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ignitec AI - RFP Analyzer</title>
+    <title>ConsultantAdd - RFP Analyzer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
@@ -24,15 +24,27 @@
             transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
             transition-duration: 150ms;
         }
+        .chatbase-iframe {
+            height: calc(100vh - 280px);
+            min-height: 700px;
+            width: 100%;
+        }
     </style>
 </head>
 <body class="h-full" x-data="{ activeTab: 'report', isMobileMenuOpen: false }">
     <div class="flex flex-col h-full lg:flex-row">
         <!-- Left Column - User Actions -->
         <div class="w-full lg:w-1/3 bg-white p-6 overflow-y-auto border-b lg:border-r border-gray-200">
-            <div class="mb-6">
-                <h1 class="text-3xl font-bold text-indigo-800">RFP Analyzer</h1>
-                <p class="text-sm text-gray-600">Ignitec AI</p>
+            <div class="mb-6 flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-indigo-800">RFP Analyzer</h1>
+                    <p class="text-sm text-gray-600">ConsultantAdd</p>
+                </div>
+                <form action="{{ url_for('logout') }}" method="get">
+                    <button type="submit" class="text-sm bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-all">
+                        Logout
+                    </button>
+                </form>
             </div>
             
             <form id="uploadForm" enctype="multipart/form-data" class="space-y-4 mb-6">
@@ -72,6 +84,12 @@
         <!-- Right Column - Output and Chat -->
         <div class="w-full lg:w-2/3 bg-gray-50 p-6 flex flex-col">
             <div class="mb-4">
+                <div class="flex items-center justify-between mb-2">
+                    <!-- 🖼️ Logo -->
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl font-bold text-indigo-700">ConsultantAdd</span>
+                    </div>
+                </div>
                 <div class="border-b border-gray-200">
                     <nav class="-mb-px flex space-x-8" aria-label="Tabs">
                         <a href="#" class="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm" 
@@ -100,24 +118,15 @@
                     </div>
                 </div>
 
-                <!-- Chat Interface -->
+                <!-- Chat Interface - REPLACED WITH CHATBASE IFRAME -->
                 <div x-show="activeTab === 'chat'" x-cloak id="chat-tab" role="tabpanel" aria-labelledby="chat-tab">
-                    <div id="chat-container" class="bg-white shadow-sm rounded-lg">
-                        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-                            <h2 class="text-lg font-medium text-indigo-900">Chat with AI Assistant</h2>
-                            <button onclick="clearChat()" class="text-sm text-indigo-600 hover:text-indigo-800 transition-colors" aria-label="Clear Chat">Clear Chat</button>
-                        </div>
-                        <div class="border-t border-gray-200">
-                            <div id="chat-messages" class="chat-messages sm:divide-y sm:divide-gray-200 p-4" aria-live="polite"></div>
-                            <div class="px-4 py-4 bg-gray-50 rounded-b-lg">
-                                <form id="chatForm" class="flex space-x-3" onsubmit="sendChatMessage(event)">
-                                    <input type="text" id="chat-input" class="flex-grow rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Type your question here..." aria-label="Chat input">
-                                    <button type="submit" id="chat-send" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all" aria-label="Send message">
-                                        Send
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
+                    <div class="bg-white shadow-sm rounded-lg">
+                        <iframe
+                            src="https://www.chatbase.co/chatbot-iframe/xGE5eYOKfgYkhHkdj9oq4"
+                            class="chatbase-iframe"
+                            frameborder="0"
+                            allow="microphone"
+                        ></iframe>
                     </div>
                 </div>
             </div>
@@ -193,48 +202,6 @@
                 generateReportBtn.disabled = false;
                 generateReportBtn.classList.remove('opacity-50', 'cursor-not-allowed');
             }
-        }
-
-        async function sendChatMessage(event) {
-            event.preventDefault();
-            const chatInput = document.getElementById('chat-input');
-            const message = chatInput.value.trim();
-            if (message === '') return;
-
-            const chatMessages = document.getElementById('chat-messages');
-            chatMessages.innerHTML += `<div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 bg-gray-50"><dt class="text-sm font-medium text-gray-500">You</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">${message}</dd></div>`;
-            chatInput.value = '';
-
-            chatMessages.innerHTML += '<div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-gray-500">AI</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><svg class="animate-spin h-5 w-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></dd></div>';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-
-            try {
-                const response = await fetch('/chat', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ query: message }),
-                });
-                const result = await response.json();
-
-                chatMessages.removeChild(chatMessages.lastElementChild); // Remove loading indicator
-
-                if (response.ok) {
-                    chatMessages.innerHTML += `<div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-indigo-600">AI</dt><dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">${result.response}</dd></div>`;
-                } else {
-                    throw new Error(result.error || 'An error occurred while processing your message');
-                }
-            } catch (error) {
-                chatMessages.innerHTML += `<div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4"><dt class="text-sm font-medium text-red-500">Error</dt><dd class="mt-1 text-sm text-red-700 sm:mt-0 sm:col-span-2">${error.message}</dd></div>`;
-            } finally {
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }
-        }
-
-        function clearChat() {
-            const chatMessages = document.getElementById('chat-messages');
-            chatMessages.innerHTML = '';
         }
     </script>
 </body>

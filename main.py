@@ -21,12 +21,38 @@ from typing_extensions import Literal
 import traceback
 import sys
 from functools import lru_cache
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from models import db, User
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import redirect, url_for, render_template, session
+from flask_login import login_required, current_user
+from flask import render_template, request, jsonify
+# ...
+from flask import redirect, url_for, render_template, session
 
 # Load environment variables
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
+
+app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "default-dev-key")
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db.init_app(app)
+with app.app_context():
+    db.create_all()
+
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 # --- FIXED: Define get_llm early ---
 from functools import lru_cache
@@ -258,7 +284,7 @@ class DocumentRetriever:
             raise RetrieverError(f"Failed to retrieve documents: {str(e)}")
 
 # Analysis
-@staticmethod
+#@staticmethod
 # --------------------------
 # Analyzer class definition
 # --------------------------
@@ -394,9 +420,13 @@ class AgentTools:
             raise ValueError(f"Failed to setup agent: {str(e)}")
 
 # Flask routes
+
+
 @app.route('/')
+@login_required
 def index():
-    return render_template('index.html')
+    return render_template('index.html', username=current_user.username)
+
 
 @app.route('/process', methods=['POST'])
 def process_documents():
@@ -470,6 +500,7 @@ def generate_report():
         formatted_report = formatter.format_report(raw_report)
         return jsonify({"structured_report": formatted_report})
 
+
     except ValueError as e:
         return jsonify({"error": str(e)}), 400
     except Exception as e:
@@ -515,7 +546,39 @@ def chat():
         app.logger.error(f"Error during chat execution: {str(e)}")
         app.logger.debug(traceback.format_exc())
         return jsonify({"error": "An internal error occurred"}), 500
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = generate_password_hash(request.form['password'])
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            return "Username already exists. Try a different one."
+        new_user = User(username=username, password=password)
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect(url_for('login'))
+    return render_template('register.html')
 
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('index'))  # Change to your main route
+        return "Invalid username or password"
+    return render_template('login.html')
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('login'))
+
+    
 # Error handlers
 @app.errorhandler(400)
 def bad_request(e):

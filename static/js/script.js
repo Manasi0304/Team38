@@ -46,17 +46,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function generateReport() {
-        reportDiv.innerHTML = `
-    <h4>Analysis Report</h4>
-    <p>RFP Document: 20 pages</p>
-    <p>Response Document: 15 pages</p>
-    <p>Key Findings:</p>
-    <ul>
-        <li>90% requirements addressed</li>
-        <li>5 potential areas for improvement identified</li>
-        <li>3 unique selling points highlighted</li>
-    </ul>
-`;
+        reportDiv.innerHTML = '<p>Generating report...</p>';
 
         // Simulating report generation
         setTimeout(() => {

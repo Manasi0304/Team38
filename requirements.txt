@@ -10,3 +10,5 @@ langchain-community>=0.0.26
 typing-extensions
 tiktoken
 requests
+flask-login
+flask-sqlalchemy
